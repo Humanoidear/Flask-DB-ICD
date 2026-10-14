@@ -1,132 +1,106 @@
-import os
-from contextlib import contextmanager
+import sqlite3
 
-import psycopg
-from psycopg.rows import dict_row
-from flask import Flask, abort, jsonify, request, send_from_directory
+from flask import Flask, g, jsonify, redirect, render_template_string, request, url_for
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_DIR = os.environ.get("STATIC_DIR", os.path.join(BASE_DIR, "static"))
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://datanotes:datanotes@localhost:5432/datanotes",
-)
+DB_PATH = "/data/notes.db"
 
 app = Flask(__name__)
 
+PAGE = """
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Intranet corporativa</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 24px; }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    .badge { display: inline-block; background: #16a34a; color: #fff; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 6px 14px; border-radius: 999px; }
+    h1 { font-size: 24px; margin: 18px 0; }
+    form { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    input[type=text] { flex: 1; min-width: 140px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #f1f5f9; }
+    button { padding: 10px 16px; border: 0; border-radius: 8px; background: #2563eb; color: #fff; cursor: pointer; }
+    ul { list-style: none; padding: 0; }
+    li { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    li small { color: #94a3b8; }
+    .del { background: #dc2626; float: right; padding: 6px 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <span class="badge">Intranet corporativa</span>
+    <h1>Aplicación de notas (Flask + SQLite)</h1>
+    <form method="post" action="/add">
+      <input type="text" name="title" placeholder="Título" required>
+      <input type="text" name="content" placeholder="Contenido">
+      <button type="submit">Añadir</button>
+    </form>
+    <ul>
+      {% for n in notes %}
+        <li>
+          <form method="post" action="/delete/{{ n[0] }}"><button class="del" type="submit">Borrar</button></form>
+          <strong>{{ n[1] }}</strong><br>
+          {{ n[2] }}<br>
+          <small>{{ n[3] }}</small>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</body>
+</html>
+"""
 
-@contextmanager
-def db_cursor():
-    """Open a connection, commit on success, rollback on error, always close."""
-    conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                yield cur
-    finally:
+
+def db():
+    if "db" not in g:
+        g.db = sqlite3.connect(DB_PATH)
+        g.db.row_factory = sqlite3.Row
+        g.db.execute(
+            "CREATE TABLE IF NOT EXISTS notes ("
+            " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            " title TEXT NOT NULL,"
+            " content TEXT NOT NULL DEFAULT '',"
+            " created_at TEXT NOT NULL DEFAULT (datetime('now'))"
+            ")"
+        )
+    return g.db
+
+
+@app.teardown_appcontext
+def close_db(_exc):
+    conn = g.pop("db", None)
+    if conn is not None:
         conn.close()
-
-
-def as_dict(row):
-    return {
-        "id": row["id"],
-        "title": row["title"],
-        "content": row["content"],
-        "created_at": row["created_at"].isoformat(),
-        "updated_at": row["updated_at"].isoformat(),
-    }
-
-
-@app.get("/api/health")
-def health():
-    try:
-        with db_cursor() as cur:
-            cur.execute("SELECT 1")
-            cur.fetchone()
-    except psycopg.Error as err:
-        return jsonify({"status": "error", "database": str(err)}), 503
-    return jsonify({"status": "ok", "database": "postgresql"})
-
-
-@app.get("/api/notes")
-def list_notes():
-    with db_cursor() as cur:
-        cur.execute("SELECT * FROM notes ORDER BY updated_at DESC")
-        rows = cur.fetchall()
-    return jsonify([as_dict(r) for r in rows])
-
-
-@app.post("/api/notes")
-def create_note():
-    data = request.get_json(silent=True) or {}
-    title = (data.get("title") or "").strip()
-    if not title:
-        return jsonify({"error": "title is required"}), 400
-    content = data.get("content") or ""
-    with db_cursor() as cur:
-        cur.execute(
-            "INSERT INTO notes (title, content) VALUES (%s, %s) RETURNING *",
-            (title, content),
-        )
-        row = cur.fetchone()
-    return jsonify(as_dict(row)), 201
-
-
-@app.get("/api/notes/<int:note_id>")
-def get_note(note_id):
-    with db_cursor() as cur:
-        cur.execute("SELECT * FROM notes WHERE id = %s", (note_id,))
-        row = cur.fetchone()
-    if row is None:
-        return jsonify({"error": "note not found"}), 404
-    return jsonify(as_dict(row))
-
-
-@app.put("/api/notes/<int:note_id>")
-def update_note(note_id):
-    data = request.get_json(silent=True) or {}
-    with db_cursor() as cur:
-        cur.execute("SELECT * FROM notes WHERE id = %s", (note_id,))
-        row = cur.fetchone()
-        if row is None:
-            return jsonify({"error": "note not found"}), 404
-        title = (data.get("title") or row["title"]).strip()
-        if not title:
-            return jsonify({"error": "title is required"}), 400
-        content = data.get("content", row["content"])
-        cur.execute(
-            "UPDATE notes SET title = %s, content = %s, updated_at = now() "
-            "WHERE id = %s RETURNING *",
-            (title, content, note_id),
-        )
-        row = cur.fetchone()
-    return jsonify(as_dict(row))
-
-
-@app.delete("/api/notes/<int:note_id>")
-def delete_note(note_id):
-    with db_cursor() as cur:
-        cur.execute("DELETE FROM notes WHERE id = %s", (note_id,))
-        deleted = cur.rowcount
-    if deleted == 0:
-        return jsonify({"error": "note not found"}), 404
-    return "", 204
 
 
 @app.get("/")
 def index():
-    return send_from_directory(STATIC_DIR, "index.html")
+    cur = db().execute("SELECT * FROM notes ORDER BY id DESC")
+    return render_template_string(PAGE, notes=cur.fetchall())
 
 
-@app.get("/<path:path>")
-def frontend(path):
-    if path.startswith("api/"):
-        abort(404)
-    full = os.path.join(STATIC_DIR, path)
-    if os.path.isfile(full):
-        return send_from_directory(STATIC_DIR, path)
-    return send_from_directory(STATIC_DIR, "index.html")
+@app.post("/add")
+def add():
+    title = request.form.get("title", "").strip()
+    content = request.form.get("content", "")
+    if title:
+        db().execute("INSERT INTO notes (title, content) VALUES (?, ?)", (title, content))
+        db().commit()
+    return redirect(url_for("index"))
+
+
+@app.post("/delete/<int:note_id>")
+def delete(note_id):
+    db().execute("DELETE FROM notes WHERE id = ?", (note_id,))
+    db().commit()
+    return redirect(url_for("index"))
+
+
+@app.get("/api/health")
+def health():
+    return jsonify({"status": "ok", "database": "sqlite"})
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host="0.0.0.0", port=80, debug=True)

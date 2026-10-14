@@ -1,199 +1,33 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DataNotes — Notes for the Datacenters course</title>
-    <meta
-      name="description"
-      content="DataNotes is a beautifully simple note taking app built for the Datacenters subject. Powered by Flask, React and SQLite."
-    />
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <nav class="nav">
-      <div class="nav-inner">
-        <a class="brand" href="#top">
-          <span class="brand-mark" aria-hidden="true"></span>
-          DataNotes
-        </a>
-        <div class="nav-links">
-          <a href="#features">Features</a>
-          <a href="#design">Design</a>
-          <a href="#stack">Tech</a>
-          <a href="#cta">Get started</a>
-        </div>
-        <a class="nav-cta" href="#cta">Try it</a>
-      </div>
-    </nav>
-
-    <header class="hero" id="top">
-      <p class="eyebrow reveal">Datacenters course project</p>
-      <h1 class="reveal">DataNotes</h1>
-      <p class="tagline reveal">
-        Your notes. Perfectly organized.<br class="only-desktop" />
-        Built for the datacenter.
-      </p>
-      <p class="lede reveal">
-        A fast, focused note taking app with a clean shadcn/ui interface and a
-        Flask + SQLite backend. Everything you write, safely stored.
-      </p>
-      <div class="hero-actions reveal">
-        <a class="btn btn-primary" href="#cta">Get started</a>
-        <a class="btn btn-ghost" href="#features">Learn more &rsaquo;</a>
-      </div>
-
-      <div class="mock reveal" aria-hidden="true">
-        <div class="mock-bar">
-          <span class="dot red"></span>
-          <span class="dot yellow"></span>
-          <span class="dot green"></span>
-          <span class="mock-url">localhost:5173</span>
-        </div>
-        <div class="mock-body">
-          <aside class="mock-side">
-            <div class="mock-search">Search notes…</div>
-            <div class="mock-note active">
-              <strong>Welcome to DataNotes</strong>
-              <span>This is a note taking app for the Datacenters subject.</span>
-            </div>
-            <div class="mock-note">
-              <strong>Tier levels</strong>
-              <span>Tier I: single path, no redundancy. Tier IV: fault tolerant…</span>
-            </div>
-            <div class="mock-note">
-              <strong>PUE</strong>
-              <span>Power Usage Effectiveness = total facility power / IT power.</span>
-            </div>
-            <div class="mock-note">
-              <strong>Cooling</strong>
-              <span>Raised-floor CRAC, in-row cooling, direct-to-chip liquid…</span>
-            </div>
-          </aside>
-          <section class="mock-main">
-            <div class="mock-title">Tier levels</div>
-            <div class="mock-line w90"></div>
-            <div class="mock-line w70"></div>
-            <div class="mock-line w80"></div>
-            <div class="mock-line w55"></div>
-            <div class="mock-line w75"></div>
-            <div class="mock-line w40"></div>
-          </section>
-        </div>
-      </div>
-    </header>
-
-    <section class="section" id="features">
-      <h2 class="reveal">Everything in its place.</h2>
-      <p class="section-lede reveal">
-        Create, search and edit notes in an interface that stays out of your way.
-      </p>
-      <div class="grid">
-        <article class="feature reveal">
-          <div class="feature-icon icon-blue"></div>
-          <h3>Instant search</h3>
-          <p>Filter notes by title or content as you type. No waiting, no spinners.</p>
-        </article>
-        <article class="feature reveal">
-          <div class="feature-icon icon-cyan"></div>
-          <h3>Persistent storage</h3>
-          <p>Every change is written to a SQLite database through a clean REST API.</p>
-        </article>
-        <article class="feature reveal">
-          <div class="feature-icon icon-indigo"></div>
-          <h3>Distraction free</h3>
-          <p>A calm, readable layout with generous spacing so ideas come first.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="band">
-      <div class="band-inner">
-        <div class="stat reveal">
-          <span class="stat-value">99.995%</span>
-          <span class="stat-label">Tier IV availability mindset</span>
-        </div>
-        <div class="stat reveal">
-          <span class="stat-value">0 ms</span>
-          <span class="stat-label">Local-first responsiveness</span>
-        </div>
-        <div class="stat reveal">
-          <span class="stat-value">1 API</span>
-          <span class="stat-label">Flask REST, six endpoints</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="design">
-      <div class="split">
-        <div class="split-copy reveal">
-          <p class="eyebrow">Powered by shadcn/ui</p>
-          <h2>Design that feels inevitable.</h2>
-          <p>
-            Buttons, cards, inputs and badges built on shadcn/ui and Tailwind CSS.
-            Every state considered, every pixel intentional — the same restraint
-            you would want from the hardware in a server hall.
-          </p>
-        </div>
-        <div class="split-visual reveal">
-          <div class="chip-row">
-            <span class="chip chip-primary">Save changes</span>
-            <span class="chip chip-outline">New</span>
-            <span class="chip chip-destructive">Delete</span>
-          </div>
-          <div class="card-demo">
-            <div class="card-demo-title">Cooling</div>
-            <div class="card-demo-text">
-              Common approaches: raised-floor CRAC units, in-row cooling,
-              rear-door heat exchangers…
-            </div>
-            <div class="card-demo-meta">Updated 6 Oct 2026</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section dark" id="stack">
-      <h2 class="reveal">Three parts. One system.</h2>
-      <p class="section-lede reveal">
-        Each piece runs on its own server, so they scale and fail independently.
-      </p>
-      <div class="grid">
-        <article class="stack reveal">
-          <span class="stack-port">:5001</span>
-          <h3>Flask &amp; SQLite</h3>
-          <p>The SGBD and REST API. Stores notes, validates input, serves JSON.</p>
-        </article>
-        <article class="stack reveal">
-          <span class="stack-port">:5173</span>
-          <h3>React &amp; shadcn/ui</h3>
-          <p>The notes app. Talks to the API and keeps the interface instant.</p>
-        </article>
-        <article class="stack reveal">
-          <span class="stack-port">:8000</span>
-          <h3>This page</h3>
-          <p>A static, Apple-style site advertising the app you are reading about.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="cta" id="cta">
-      <h2 class="reveal">Start taking notes.</h2>
-      <p class="reveal">Open the app and write your first datacenter note.</p>
-      <div class="hero-actions reveal">
-        <a class="btn btn-primary" data-app-link href="#">Open DataNotes</a>
-      </div>
-      <p class="fine reveal">Requires the Flask API running on port 5001.</p>
-    </section>
-
-    <footer class="footer">
-      <div class="footer-inner">
-        <span>DataNotes — Datacenters subject project</span>
-        <span>Flask · React · shadcn/ui · SQLite</span>
-      </div>
-    </footer>
-
-    <script src="config.js"></script>
-    <script src="script.js"></script>
-  </body>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Servidor web — DMZ</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0f172a; color: #e2e8f0; font-family: system-ui, sans-serif; padding: 24px; }
+    .card { width: 100%; max-width: 560px; background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 40px; }
+    .badge { display: inline-block; background: #dc2626; color: #fff; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 6px 14px; border-radius: 999px; }
+    h1 { font-size: 28px; margin: 20px 0 24px; }
+    dl { display: grid; gap: 18px; margin: 0; }
+    dt { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #94a3b8; margin-bottom: 4px; }
+    dd { margin: 0; font-size: 16px; color: #f1f5f9; }
+    #ip { font-family: ui-monospace, Menlo, monospace; color: #38bdf8; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <span class="badge">Zona desmilitarizada</span>
+    <h1>Servidor web básico</h1>
+    <dl>
+      <dt>Asignatura</dt>
+      <dd>Infraestructura Informática para Centros de Procesamiento de Datos (14541)</dd>
+      <dt>Estudiante</dt>
+      <dd>Alejandro González y Francisco Nortes</dd>
+      <dt>Dirección IP</dt>
+      <dd id="ip"></dd>
+    </dl>
+  </main>
+  <script>document.getElementById("ip").textContent = location.hostname</script>
+</body>
 </html>
