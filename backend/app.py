@@ -2,7 +2,7 @@ import sqlite3
 
 from flask import Flask, g, jsonify, redirect, render_template_string, request, url_for
 
-DB_PATH = "/data/notes.db"
+DB_PATH = "/data/perros.db"
 
 app = Flask(__name__)
 
@@ -30,19 +30,16 @@ PAGE = """
 <body>
   <div class="wrap">
     <span class="badge">Intranet corporativa</span>
-    <h1>Aplicación de notas (Flask + SQLite)</h1>
+    <h1>Lista de nombres de perro</h1>
     <form method="post" action="/add">
-      <input type="text" name="title" placeholder="Título" required>
-      <input type="text" name="content" placeholder="Contenido">
+      <input type="text" name="name" placeholder="Nombre del perro" required>
       <button type="submit">Añadir</button>
     </form>
     <ul>
-      {% for n in notes %}
+      {% for p in perros %}
         <li>
-          <form method="post" action="/delete/{{ n[0] }}"><button class="del" type="submit">Borrar</button></form>
-          <strong>{{ n[1] }}</strong><br>
-          {{ n[2] }}<br>
-          <small>{{ n[3] }}</small>
+          <form method="post" action="/delete/{{ p[0] }}"><button class="del" type="submit">Quitar</button></form>
+          <strong>{{ p[1] }}</strong>
         </li>
       {% endfor %}
     </ul>
@@ -57,11 +54,9 @@ def db():
         g.db = sqlite3.connect(DB_PATH)
         g.db.row_factory = sqlite3.Row
         g.db.execute(
-            "CREATE TABLE IF NOT EXISTS notes ("
+            "CREATE TABLE IF NOT EXISTS perros ("
             " id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            " title TEXT NOT NULL,"
-            " content TEXT NOT NULL DEFAULT '',"
-            " created_at TEXT NOT NULL DEFAULT (datetime('now'))"
+            " name TEXT NOT NULL"
             ")"
         )
     return g.db
@@ -76,23 +71,22 @@ def close_db(_exc):
 
 @app.get("/")
 def index():
-    cur = db().execute("SELECT * FROM notes ORDER BY id DESC")
-    return render_template_string(PAGE, notes=cur.fetchall())
+    cur = db().execute("SELECT * FROM perros ORDER BY id DESC")
+    return render_template_string(PAGE, perros=cur.fetchall())
 
 
 @app.post("/add")
 def add():
-    title = request.form.get("title", "").strip()
-    content = request.form.get("content", "")
-    if title:
-        db().execute("INSERT INTO notes (title, content) VALUES (?, ?)", (title, content))
+    name = request.form.get("name", "").strip()
+    if name:
+        db().execute("INSERT INTO perros (name) VALUES (?)", (name,))
         db().commit()
     return redirect(url_for("index"))
 
 
-@app.post("/delete/<int:note_id>")
-def delete(note_id):
-    db().execute("DELETE FROM notes WHERE id = ?", (note_id,))
+@app.post("/delete/<int:dog_id>")
+def delete(dog_id):
+    db().execute("DELETE FROM perros WHERE id = ?", (dog_id,))
     db().commit()
     return redirect(url_for("index"))
 
